@@ -1,0 +1,6 @@
+{
+    // "extends": "airbnb-base",
+    "rules": {
+        "myrule": 2
+    }
+}
