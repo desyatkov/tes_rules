@@ -1,6 +1,6 @@
 {
     // "extends": "airbnb-base",
     "rules": {
-        "myrule": 2
+        "func-decl-poller": 2
     }
 }

@@ -1,17 +1,18 @@
 /* global u, jQuery */
-var saassd = $('a')
- 
-u.execWhenReadyPoller( function(){
-    u.execWhenReadyPoller(function(){
-        var aa = $('a')
-    },u.poller('_'));
+// /* eslint-disable */
 
+var a = $('a');
+$('aqq').show();
+
+u.execWhenReadyPoller(function(){
+    jQuery('aqq').show();
+    var a = $('a');
     u.execWhenReadyPoller(function(){
-            u.execWhenReadyPoller(function() {
-                var dd = jQuery(1234);
-            },u.poller('ramda'));
+         $('aqq').show();
     },u.poller('jquery'));
+},u.poller('jquery'));
 
-}, u.poller('ramda'));
 
-var aa = $('a')
+
+
+a('aqq').show();
