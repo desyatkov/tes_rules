@@ -1,76 +1,71 @@
 var parents = require('ast-parents')
-var _ = require('lodash');
+var R = require('ramda');
 
 
-function upollerErr(node,context) {
+function upollerErr(node, context, cnt) {
     var e = parents(node);
-    _.forEach(e.declarations, function (val) {
-        var exprs = val.init.callee.name;
-        var fname = val.id.name;
-        var exprsT = /\$|jquery/ig.test(exprs);
 
-        if (val.init && val.init.callee && exprsT) {
-            var uCount = 0,
-                uCountarr = [],
-                uCountObj = [];
-
+        
+    if (e.callee.type === 'Identifier') {
+        var identName = e.callee.name;
+        if ( R.test(/\$|jquery/ig, identName) ) {
             (function recur(subnode) {
-                if (subnode.parent && subnode.parent.type === 'ExpressionStatement') {
-                    var name = e.declarations[0].id.name;
-                    var n = subnode.parent.expression.callee;
-                    var arg = _.last(subnode.parent.expression.arguments).arguments[0].value
-
-                    var sourceCode = subnode.range;
-
-                    var polerStart = n.loc.start
-                    var polerEnd = _.last(subnode.parent.expression.arguments).arguments[0].loc.start;
-                    uCount++;
-                    uCountarr.push(arg);
-                    uCountObj.push({
-                        arg: arg,
-                        line: polerEnd.line
-                    })
+                const checkExp = R.pathEq(["parent","type"], 'ExpressionStatement');
+                const checkU = R.pathEq(["parent","expression","callee","object","name"], 'u');
+                const lens = R.lensPath(["parent","expression","arguments", 1, "arguments", 0, 'value']);
+                
+                const paramX = R.view(lens, subnode);
+                
+                const lowerParam = R.when(
+                    R.complement(R.isNil),
+                    R.compose(
+                        R.equals('jquery'),
+                        R.toLower()
+                    )
+                );
+                
+                if ( checkExp(subnode) && checkU(subnode) && lowerParam(paramX) ) {
+                    cnt++;
                     recur(subnode.parent)
-
                 } else if (subnode.parent === null) {
-
-
-                    var dublExpr = _.filter(uCountarr, function (value, index, iteratee) {
-                        return _.includes(iteratee, value, index + 1);
-                    });
-
-
-                    var es = _.map(_.filter(uCountObj, (o) => o.arg == dublExpr[0]), 'line');
-
-
-                    if (dublExpr.length) {
+                    if (cnt > 1) {
                         context.report({
-                            node: node,
-                            message: `--ps 😱  More then one poller('${dublExpr[0]}') for this statment in ${es.join(' and ')} line`
+                            node: e,
+                            message: `--ps 😳  More than one jquery poller for this statement`
+                        });
+                    } else if (cnt === 0) {
+                        context.report({
+                            node: e,
+                            message: `--ps 😱  Missing poller for Jquery statement`
                         });
                     }
-
-                    if (uCount === 0) {
-                        context.report({
-                            node: node,
-                            message: `--ps 😂  jQuery declaration for '${fname}' not have u.poller(...)`
-                        });
-                    }
-
                     return;
                 } else {
-                    recur(subnode.parent)
+                    recur(subnode.parent);
                 }
             })(e)
         }
-    });
+    }
 }
 
 module.exports = {
+    meta: {
+        docs: {
+            description: "u.execWhenReadyPoller checking",
+            category: "Fill me in",
+            recommended: false
+        },
+        fixable: null, // or "code" or "whitespace"
+        schema: [
+            // fill in your schema
+        ]
+    },
+
     create: function (context) {
+        var counter = 0;
         return {
-            VariableDeclaration: function (innernode) {
-                upollerErr(innernode, context);
+            CallExpression: function (innernode) {
+                upollerErr(innernode, context, counter);
             }
         };
     }

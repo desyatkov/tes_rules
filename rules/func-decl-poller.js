@@ -1,56 +1,46 @@
-var parents = require('ast-parents')
-var _ = require('lodash');
+const parents = require('ast-parents')
+const _ = require('lodash');
+const R = require('ramda');
+const {pipe, map, props, flatten, filter, join} = R;
 
-
-function upollerErr(node, context, cnt) {
-    var e = parents(node);
-
-    if (e.callee.type === 'Identifier') {
-        // console.log(e.callee.object.callee.name)   
-        var identName = e.callee.name;
-        if (/\$|jquery/ig.test(identName)) {
-
-            (function recur(subnode) {
-                if (subnode.parent &&
-                    subnode.parent.type === 'ExpressionStatement' &&
-                    subnode.parent.expression.callee.object.name === 'u' &&
-                    _.last(subnode.parent.expression.arguments).arguments[0].value.toLowerCase() === 'jquery'
-                ) {
-                    cnt++;
-                    recur(subnode.parent)
-                } else if (subnode.parent === null ) {
-                    if ( cnt > 1 ) {
-                        context.report({
-                            node: e,
-                            message: `--ps 😱  More then one jquery poller for one node`
-                        });
-                    } else if( cnt === 0 ) {
-                        context.report({
-                            node: e,
-                            message: `--ps 😱  Missing poller for Jquery node`
-                        });
-                    }
-                         
-
-
-                    return;
-                } else {
-                    
-                    recur(subnode.parent)
-                }
-            })(e)
-        }
-    }
-
-
-}
+var randomEmoji = require('random-emoji');
+ 
+var emoji = randomEmoji.random({count: 1})[0]
 
 module.exports = {
-    create: function (context) {
-        var counter = 0;
+    meta: {
+        docs: {
+            description: "not allowed to use one character in func params names",
+            category: "Fill me in",
+            recommended: true
+        },
+        fixable: null,  // or "code" or "whitespace"
+        schema: [
+            // fill in your schema
+        ]
+    },
+
+    create: function(context) {
         return {
-            CallExpression: function (innernode) {
-                upollerErr(innernode, context, counter);
+
+            FunctionDeclaration: function (node) {
+                var isOK = node.params.reduce(function (acc, item) {
+                    return item.name.length < 2;
+                }, false);
+                 
+                const parNames = pipe(
+                    map( a => props(['name'],a) ),
+                    flatten,
+                    filter( a=> a.length < 2 ),
+                    join(', ')
+                )( node.params )
+
+                if (isOK) {
+                    context.report({
+                        node: node,
+                        message: `--ps ${emoji.character} not allow one character param name '${parNames}'`
+                    });
+                }
             }
         };
     }

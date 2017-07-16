@@ -11,11 +11,13 @@
   "license": "ISC",
   "devDependencies": {
     "eslint": "^4.2.0",
-    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-html": "^3.1.0",
     "eslint-plugin-import": "^2.7.0"
   },
   "dependencies": {
     "ast-parents": "0.0.1",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "ramda": "0.24.1",
+    "random-emoji": "^1.0.2"
   }
 }
